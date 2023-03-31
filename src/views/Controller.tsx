@@ -52,7 +52,7 @@ export default function Controller(props: ControllerProps): JSX.Element {
       outFile,
       async () => {
         console.log('ok');
-        // setProgress(100);
+        setProgress(100);
 
         props.setVideoUri(outFile);
         const stat = await RNFS.stat(outFile);

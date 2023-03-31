@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {View, Text, TouchableHighlight, StyleSheet} from 'react-native';
-import Svg, {Circle, Path, Text as SvgText} from 'react-native-svg';
+import CircleProgress from './CircleProgress';
 
 export default function useProgressPopup() {
   const [progress, setProgress] = useState<number>(0);
@@ -12,38 +12,16 @@ export default function useProgressPopup() {
 
   const setProgressv1 = (progress: number) => {
     if (progress >= 100) {
-      toggleVisible(false);
+      // toggleVisible(false);
     }
     setProgress(progress);
-  };
-
-  const ProgressSvg = () => {
-    const svgWidth = 300,
-      svgHeight = 300;
-
-    function transAngle(angle: number) {
-      return (Math.PI * angle) / 180;
-    }
-
-    const startAxis = `M${Math.floor(svgWidth / 2)} 0`;
-    const progressAxis = [150 + Math.sin(transAngle(300)) * 150, 150 - Math.cos(transAngle(300)) * 150];
-    const endAxis = `A${Math.floor(svgWidth / 2)} ${Math.floor(svgWidth / 2)} 0 1 1 ${progressAxis[0]} ${progressAxis[1]}`;
-    console.log(startAxis + ' ' + endAxis);
-    return (
-      <Svg width={svgWidth} height={svgHeight}>
-        <Path d={startAxis + ' ' + endAxis} fill="none" stroke="red" strokeWidth={5} />
-        <SvgText stroke="purple" fontSize="20" fontWeight="bold" x="100" y="20" textAnchor="middle">
-          {progress}%
-        </SvgText>
-      </Svg>
-    );
   };
 
   const ProgressPopup = () => {
     if (visible) {
       return (
         <View style={styles.container}>
-          <ProgressSvg />
+          <CircleProgress progress={progress} />
           <Text style={styles.progressText}>文件转码中, 请稍后...</Text>
           <TouchableHighlight style={styles.cancelBtn} onPress={() => toggleVisible(false)}>
             <Text>cancel</Text>
