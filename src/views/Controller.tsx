@@ -1,13 +1,17 @@
-import React from 'react';
-import {StyleSheet, View, Text, TouchableHighlight, Alert} from 'react-native';
+import React, {useCallback} from 'react';
+import {StyleSheet, View, Text, TouchableHighlight, Alert, Platform} from 'react-native';
 import {requestPermission} from '../helpers/permission';
 
 import RNFS from 'react-native-fs';
-import {FFmpegKit, FFmpegSession, FFprobeKit, FFprobeSession} from 'ffmpeg-kit-react-native';
+import {FFmpegKit, FFmpegKitConfig} from 'ffmpeg-kit-react-native';
 import DocumentPicker from 'react-native-document-picker';
-import FFmpegCommand from '../helpers/ffmpegCommand';
+import FFmepg from '../helpers/ffmpegCommand';
+import useProgressPopup from './ProgressPopup';
 
-const CACHE_DIR = 'file://' + RNFS.CachesDirectoryPath;
+function getDir(defaultPath: 'cache' | 'document') {
+  const path = defaultPath === 'document' ? RNFS.DocumentDirectoryPath : RNFS.CachesDirectoryPath;
+  return Platform.OS === 'android' ? 'file://' + path : path;
+}
 
 interface ControllerProps {
   setVideoUri: (uri: string) => void;
@@ -19,57 +23,59 @@ export default function Controller(props: ControllerProps): JSX.Element {
     {title: '查看缓存', onPress: () => {}},
   ];
 
+  const {ProgressPopup, setProgress, openProgressPopup} = useProgressPopup();
+
   const pickVideo = async () => {
     const permission = await requestPermission('android.permission.READ_EXTERNAL_STORAGE');
+    FFmpegKitConfig.disableLogs();
     console.log(permission);
     // if (permission) {
     const pickValue = await DocumentPicker.pickSingle({
       copyTo: 'cachesDirectory',
       type: DocumentPicker.types.video,
     });
-    const totalSize = pickValue.size ? pickValue.size : 0;
 
     if (pickValue.fileCopyUri) {
-      const outFilePath = CACHE_DIR + '/video_' + new Date().getTime() + '.mp4';
-      videoTranscoding(pickValue.fileCopyUri, outFilePath, totalSize);
+      const outFilePath = getDir('cache') + '/video_' + new Date().getTime() + '.mp4';
+      videoTranscoding(pickValue.fileCopyUri, outFilePath);
     } else {
       Alert.alert('选择视频出错');
     }
     // }
   };
 
-  const videoTranscoding = async (targetFile: string, outFile: string, totalSize: number) => {
-    console.warn(totalSize);
+  const videoTranscoding = async (targetFile: string, outFile: string) => {
     // -aspect 16:9
-    const mediaSession = await FFprobeKit.getMediaInformation(targetFile);
-    const mediaDuration = Math.floor(mediaSession.getMediaInformation().getDuration() * 1000); // 获取的秒数，转换毫秒便于进度处理
+    openProgressPopup();
+    FFmepg.transcoding(
+      targetFile,
+      outFile,
+      async () => {
+        console.log('ok');
+        // setProgress(100);
 
-    const commandStr = new FFmpegCommand(targetFile, outFile);
-    commandStr.add('-s 1920x1080').add('-r 30');
-    FFmpegKit.executeAsync(
-      commandStr.getCommand(),
-      async session => {
         props.setVideoUri(outFile);
         const stat = await RNFS.stat(outFile);
         console.log('[stat]', stat);
       },
-      undefined,
-      statistics => {
-        console.warn('【execute statistics】', Math.floor((statistics.getTime() / mediaDuration) * 100) + '%');
+      progress => {
+        setProgress(progress);
+        console.log(progress + '%');
       },
     );
   };
 
-  console.log(props);
-
   return (
-    <View style={styles.container}>
-      {btns.map(btn => (
-        <TouchableHighlight key={btn.title} onPress={btn.onPress} style={styles.btn}>
-          <Text style={styles.btnText}>{btn.title}</Text>
-        </TouchableHighlight>
-      ))}
-    </View>
+    <>
+      <View style={styles.container}>
+        {btns.map(btn => (
+          <TouchableHighlight key={btn.title} onPress={btn.onPress} style={styles.btn}>
+            <Text style={styles.btnText}>{btn.title}</Text>
+          </TouchableHighlight>
+        ))}
+      </View>
+      <ProgressPopup />
+    </>
   );
 }
 
