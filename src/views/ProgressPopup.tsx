@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, Text, TouchableHighlight, StyleSheet} from 'react-native';
 import CircleProgress from './CircleProgress';
 
@@ -22,7 +22,7 @@ export default function useProgressPopup() {
       return (
         <View style={styles.container}>
           <CircleProgress progress={progress} />
-          <Text style={styles.progressText}>文件转码中, 请稍后...</Text>
+          <Text style={styles.progressText}>文件转码中，请稍后....</Text>
           <TouchableHighlight style={styles.cancelBtn} onPress={() => toggleVisible(false)}>
             <Text>cancel</Text>
           </TouchableHighlight>
@@ -40,6 +40,23 @@ export default function useProgressPopup() {
   };
 }
 
+// function LoadingPointText() {
+//   const [pointText, setPointText] = useState('.');
+
+//   useEffect(() => {
+//     const timer = setTimeout(() => {
+//       if (pointText.length >= 6) {
+//         setPointText('.');
+//       } else {
+//         setPointText(pointText + '.');
+//       }
+//       clearTimeout(timer);
+//     }, 300);
+//   }, [pointText]);
+
+//   return <Text style={{fontSize: 20, fontWeight: 'bold'}}>{pointText}</Text>;
+// }
+
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
@@ -52,8 +69,9 @@ const styles = StyleSheet.create({
     left: 0,
   },
   progressText: {
-    fontSize: 16,
-    marginBottom: 24,
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 24,
   },
   cancelBtn: {
     padding: 12,
