@@ -28,7 +28,7 @@ export default function Controller(props: ControllerProps): JSX.Element {
   const pickVideo = async () => {
     const permission = await requestPermission('android.permission.READ_EXTERNAL_STORAGE');
     FFmpegKitConfig.disableLogs();
-    console.log(permission);
+    console.log('permission', permission);
     // if (permission) {
     const pickValue = await DocumentPicker.pickSingle({
       copyTo: 'cachesDirectory',
@@ -45,6 +45,7 @@ export default function Controller(props: ControllerProps): JSX.Element {
   };
 
   const videoTranscoding = async (targetFile: string, outFile: string) => {
+    console.log('videoTranscoding');
     // -aspect 16:9
     openProgressPopup();
     FFmepg.transcoding(
