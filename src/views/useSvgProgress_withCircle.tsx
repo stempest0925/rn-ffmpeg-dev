@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
-import Svg, {Circle, Text} from 'react-native-svg';
+import {View, Text, StyleSheet} from 'react-native';
+import Svg, {Circle} from 'react-native-svg';
 import Animated, {useSharedValue, withTiming} from 'react-native-reanimated';
 
 interface SvgProgressProps {
@@ -8,56 +9,74 @@ interface SvgProgressProps {
 }
 
 function useSvgProgress(props: SvgProgressProps) {
+  const [progress, setProgress] = useState(0);
   const animatedValue = useSharedValue(0);
   const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-  const [progress, setProgress] = useState(0);
 
   const svgSize = props.size + props.strokeWidth;
-  const strokePadding = Math.floor(props.strokeWidth / 2);
-  const originRadius = Math.floor(props.size / 2);
-  const circleAxis: [number, number] = [originRadius + strokePadding, originRadius + strokePadding];
-  const circleSize = originRadius;
+  const svgPadding = Math.floor(props.strokeWidth / 2);
+  const circleRadius = Math.floor(props.size / 2);
+  const circleAxis: [number, number] = [circleRadius + svgPadding, circleRadius + svgPadding];
 
-  const strokeDasharray = Math.floor(Math.PI * 2 * originRadius); //周长 2πr
+  const strokeDasharray = Math.floor(Math.PI * 2 * circleRadius); //周长 2πr
   const toggleProgress = (_progress: number) => {
     setProgress(_progress);
     const strokeDashoffset = Math.floor(((100 - _progress) / 100) * strokeDasharray); //实长
-    animatedValue.value = withTiming(strokeDashoffset, {duration: 600});
+    animatedValue.value = withTiming(strokeDashoffset);
   };
 
   const SvgProgressRender = () => (
-    <Svg width={svgSize} height={svgSize} transform={[{rotate: '-90deg'}]}>
-      <Circle
-        cx={circleAxis[0]}
-        cy={circleAxis[1]}
-        r={circleSize}
-        fill="transparent"
-        stroke="#ccc"
-        strokeWidth={props.strokeWidth}
-      />
-      <AnimatedCircle
-        cx={circleAxis[0]}
-        cy={circleAxis[1]}
-        r={circleSize}
-        fill="transparent"
-        stroke="green"
-        strokeLinecap="round"
-        strokeWidth={props.strokeWidth}
-        strokeDasharray={strokeDasharray}
-        strokeDashoffset={animatedValue}
-      />
-
-      <Text x={circleAxis[0]} y={circleAxis[1]} fill="green" fontSize="32" fontWeight="bold">
-        {progress}%
-      </Text>
-    </Svg>
+    <View style={[styles.container, {width: svgSize, height: svgSize}]}>
+      <Svg width={svgSize} height={svgSize} style={styles.svg}>
+        <Circle
+          cx={circleAxis[0]}
+          cy={circleAxis[1]}
+          r={circleRadius}
+          fill="none"
+          stroke="#ccc"
+          strokeWidth={props.strokeWidth}
+        />
+        <AnimatedCircle
+          cx={circleAxis[0]}
+          cy={circleAxis[1]}
+          r={circleRadius}
+          fill="none"
+          stroke="green"
+          strokeLinecap="round"
+          strokeWidth={props.strokeWidth}
+          strokeDasharray={strokeDasharray}
+          strokeDashoffset={animatedValue}
+        />
+      </Svg>
+      <Text style={styles.text}>{progress}%</Text>
+    </View>
   );
 
   return {SvgProgressRender, toggleProgress};
 }
 
+const styles = StyleSheet.create({
+  container: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  svg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    transform: [{rotate: '-90deg'}],
+  },
+  text: {
+    color: 'green',
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+});
+
 export default useSvgProgress;
 /**
  * 【开发问题】
- * 1. Circle transform rotate无效
+ * 1. Circle transform rotate无效。
+ * 2. Text没有找到好的方案居中，因此用了RN Text。
  */

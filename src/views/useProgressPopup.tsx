@@ -2,8 +2,11 @@ import React, {useState} from 'react';
 import {View, Text, TouchableHighlight, StyleSheet} from 'react-native';
 import useSvgProgress from './useSvgProgress_withCircle';
 
-export default function useProgressPopup() {
-  // const [progress, setProgress] = useState<number>(0);
+interface ProgressPopupProps {
+  onCancelTask: () => void;
+}
+
+export default function useProgressPopup(props: ProgressPopupProps) {
   const [visible, setVisible] = useState<boolean>(false);
   const {SvgProgressRender, toggleProgress} = useSvgProgress({size: 250, strokeWidth: 12});
 
@@ -11,12 +14,16 @@ export default function useProgressPopup() {
     setVisible(_visible === undefined ? !_visible : _visible);
   };
 
-  const setProgressv1 = (progress: number) => {
-    if (progress >= 100) {
-      // toggleVisible(false);
+  const setProgress = (_progress: number) => {
+    toggleProgress(_progress);
+    if (_progress >= 100) {
+      toggleVisible(false);
     }
-    // setProgress(progress);
-    toggleProgress(progress);
+  };
+
+  const onCancelTask = () => {
+    toggleVisible(false);
+    props.onCancelTask();
   };
 
   const ProgressPopup = () => {
@@ -25,8 +32,8 @@ export default function useProgressPopup() {
         <View style={styles.container}>
           <SvgProgressRender />
           <Text style={styles.progressText}>文件转码中，请稍后....</Text>
-          <TouchableHighlight style={styles.cancelBtn} onPress={() => toggleVisible(false)}>
-            <Text>cancel</Text>
+          <TouchableHighlight style={styles.cancelBtn} onPress={() => onCancelTask()}>
+            <Text style={styles.cancelText}>cancel</Text>
           </TouchableHighlight>
         </View>
       );
@@ -36,28 +43,11 @@ export default function useProgressPopup() {
 
   return {
     ProgressPopup,
-    setProgress: setProgressv1,
+    setProgress,
     openProgressPopup: () => toggleVisible(true),
     closeProgressPopup: () => toggleVisible(false),
   };
 }
-
-// function LoadingPointText() {
-//   const [pointText, setPointText] = useState('.');
-
-//   useEffect(() => {
-//     const timer = setTimeout(() => {
-//       if (pointText.length >= 6) {
-//         setPointText('.');
-//       } else {
-//         setPointText(pointText + '.');
-//       }
-//       clearTimeout(timer);
-//     }, 300);
-//   }, [pointText]);
-
-//   return <Text style={{fontSize: 20, fontWeight: 'bold'}}>{pointText}</Text>;
-// }
 
 const styles = StyleSheet.create({
   container: {
@@ -71,12 +61,18 @@ const styles = StyleSheet.create({
     left: 0,
   },
   progressText: {
+    marginVertical: 24,
     fontSize: 20,
     fontWeight: 'bold',
-    marginVertical: 24,
   },
   cancelBtn: {
-    padding: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     backgroundColor: 'yellow',
+    borderRadius: 9,
+  },
+  cancelText: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
