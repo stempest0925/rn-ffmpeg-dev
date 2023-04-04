@@ -1,12 +1,11 @@
-import React, {useCallback} from 'react';
+import React from 'react';
 import {StyleSheet, View, Text, TouchableHighlight, Alert, Platform} from 'react-native';
-import {requestPermission} from '../helpers/permission';
+// import {requestPermission} from '../helpers/permission';
 
 import RNFS from 'react-native-fs';
-import {FFmpegKit, FFmpegKitConfig} from 'ffmpeg-kit-react-native';
 import DocumentPicker from 'react-native-document-picker';
 import FFmepg from '../helpers/ffmpegCommand';
-import useProgressPopup from './useProgressPopup';
+import useProgressPopup from './ProgressPopup';
 
 function getDir(defaultPath: 'cache' | 'document') {
   const path = defaultPath === 'document' ? RNFS.DocumentDirectoryPath : RNFS.CachesDirectoryPath;
@@ -18,18 +17,16 @@ interface ControllerProps {
 }
 
 export default function Controller(props: ControllerProps): JSX.Element {
+  const {ProgressPopup, setProgress, openProgressPopup} = useProgressPopup({onCancel: () => {}});
+
   const btns = [
     {title: '选择影片', onPress: () => pickVideo()},
     {title: '查看缓存', onPress: () => {}},
   ];
 
-  const {ProgressPopup, setProgress, openProgressPopup} = useProgressPopup();
-
   const pickVideo = async () => {
-    const permission = await requestPermission('android.permission.READ_EXTERNAL_STORAGE');
-    FFmpegKitConfig.disableLogs();
-    console.log('permission', permission);
-    // if (permission) {
+    // const permission = await requestPermission('android.permission.READ_EXTERNAL_STORAGE');
+
     const pickValue = await DocumentPicker.pickSingle({
       copyTo: 'cachesDirectory',
       type: DocumentPicker.types.video,
@@ -41,27 +38,19 @@ export default function Controller(props: ControllerProps): JSX.Element {
     } else {
       Alert.alert('选择视频出错');
     }
-    // }
   };
 
   const videoTranscoding = async (targetFile: string, outFile: string) => {
-    console.log('videoTranscoding');
-    // -aspect 16:9
     openProgressPopup();
     FFmepg.transcoding(
       targetFile,
       outFile,
       async () => {
-        console.log('ok');
         setProgress(100);
-
         props.setVideoUri(outFile);
-        const stat = await RNFS.stat(outFile);
-        console.log('[stat]', stat);
       },
       progress => {
         setProgress(progress);
-        console.log(progress + '%');
       },
     );
   };

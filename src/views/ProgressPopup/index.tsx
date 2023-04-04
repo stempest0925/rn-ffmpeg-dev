@@ -3,9 +3,9 @@ import {View, Text, TouchableHighlight, StyleSheet} from 'react-native';
 import useSvgProgress from './useSvgProgress_withCircle';
 
 interface ProgressPopupProps {
-  onCancelTask: () => void;
+  onCancel: () => void;
 }
-
+// 要么把任务放进来，内部管理进度和取消，要么就不要传递相关数据，增加耦合。
 export default function useProgressPopup(props: ProgressPopupProps) {
   const [visible, setVisible] = useState<boolean>(false);
   const {SvgProgressRender, toggleProgress} = useSvgProgress({size: 250, strokeWidth: 12});
@@ -21,9 +21,9 @@ export default function useProgressPopup(props: ProgressPopupProps) {
     }
   };
 
-  const onCancelTask = () => {
+  const onCancel = () => {
     toggleVisible(false);
-    props.onCancelTask();
+    props.onCancel();
   };
 
   const ProgressPopup = () => {
@@ -32,8 +32,8 @@ export default function useProgressPopup(props: ProgressPopupProps) {
         <View style={styles.container}>
           <SvgProgressRender />
           <Text style={styles.progressText}>文件转码中，请稍后....</Text>
-          <TouchableHighlight style={styles.cancelBtn} onPress={() => onCancelTask()}>
-            <Text style={styles.cancelText}>cancel</Text>
+          <TouchableHighlight style={styles.cancelBtn} onPress={() => onCancel()}>
+            <Text style={styles.cancelText}>Cancel</Text>
           </TouchableHighlight>
         </View>
       );

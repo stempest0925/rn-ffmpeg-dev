@@ -1,7 +1,10 @@
 import React from 'react';
 import {StyleSheet, View} from 'react-native';
+import {FFmpegKitConfig} from 'ffmpeg-kit-react-native';
 import Video from 'react-native-video';
 import {VIDEO_HEIGHT} from '../constants/video';
+
+FFmpegKitConfig.disableLogs();
 
 interface VideoProps {
   uri: string | null;
