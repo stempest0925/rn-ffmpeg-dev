@@ -1,12 +1,14 @@
 import {FFmpegKit, FFprobeKit} from 'ffmpeg-kit-react-native';
 
+const RESOLUTION_PRESET = {qHD: '640x360', qFHD: '960x540', HD: '1280x720', FHD: '1920x1080', QHD: '2560x1440', UHD: '3840x2160'};
+
 export default class FFmepg {
   static transcoding(
     targetFile: string,
     outFile: string,
     completeCallback: () => void,
     progressCallback?: (progress: number) => void,
-    command: FFmpegCommand = new FFmpegCommand(targetFile, outFile).add('-s 1920x1080').add('-r 30'),
+    command: FFmpegCommand = new FFmpegCommand(targetFile, outFile).add(`-s ${RESOLUTION_PRESET.HD}`).add('-r 30'),
   ) {
     try {
       const commandStr = command.getCommand();

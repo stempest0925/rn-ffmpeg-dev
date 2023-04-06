@@ -3,9 +3,24 @@ import RNFS from 'react-native-fs';
 
 class fileSystem {
   static readonly ROOT_PREFIX = Platform.OS === 'android' ? 'file://' : '';
+  static readonly CACHE_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.CachesDirectoryPath + '/';
+  static readonly DOCUMENT_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.DocumentDirectoryPath + '/';
 
   static exists(filepath: string): Promise<boolean> {
     return RNFS.exists(filepath);
+  }
+
+  static mkdir(dir: string, rootDir: 'cache' | 'document'): Promise<boolean> {
+    return new Promise(async resolve => {
+      const _path = `${rootDir === 'document' ? fileSystem.DOCUMENT_ROOT_DIR : fileSystem.CACHE_ROOT_DIR}${dir}/`;
+      const _exists = await fileSystem.exists(_path);
+      if (!_exists) {
+        await RNFS.mkdir(_path);
+        resolve(true);
+      } else {
+        resolve(true);
+      }
+    });
   }
 
   /**
@@ -70,8 +85,7 @@ class fileSystem {
 
   static clearCache(dir?: string): Promise<boolean> {
     return new Promise(async resolve => {
-      const _cacheRoot = fileSystem.ROOT_PREFIX + RNFS.CachesDirectoryPath + '/';
-      const _deleteStatus = await fileSystem.delete(dir ? _cacheRoot + dir : _cacheRoot);
+      const _deleteStatus = await fileSystem.delete(dir ? fileSystem.CACHE_ROOT_DIR + dir : fileSystem.CACHE_ROOT_DIR);
 
       resolve(_deleteStatus);
     });

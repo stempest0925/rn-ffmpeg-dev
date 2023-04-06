@@ -6,6 +6,8 @@ import RNFS from 'react-native-fs';
 import DocumentPicker from 'react-native-document-picker';
 import FFmepg from '../helpers/ffmpegCommand';
 import useProgressPopup from './ProgressPopup';
+import fileSystem from '../helpers/fileSystem';
+import {FFmpegKit} from 'ffmpeg-kit-react-native';
 
 function getDir(defaultPath: 'cache' | 'document') {
   const path = defaultPath === 'document' ? RNFS.DocumentDirectoryPath : RNFS.CachesDirectoryPath;
@@ -14,6 +16,7 @@ function getDir(defaultPath: 'cache' | 'document') {
 
 interface ControllerProps {
   setVideoUri: (uri: string) => void;
+  setThumbnailList: (list: string[]) => void;
 }
 
 export default function Controller(props: ControllerProps): JSX.Element {
@@ -25,7 +28,11 @@ export default function Controller(props: ControllerProps): JSX.Element {
   ];
 
   const pickVideo = async () => {
-    // const permission = await requestPermission('android.permission.READ_EXTERNAL_STORAGE');
+    // await requestPermission('android.permission.READ_EXTERNAL_STORAGE');
+    fileSystem.clearCache('thumbnails').then(res => console.log('清理thumbnail: ', res));
+
+    await fileSystem.mkdir('videos', 'cache');
+    await fileSystem.mkdir('thumbnails', 'cache');
 
     const pickValue = await DocumentPicker.pickSingle({
       copyTo: 'cachesDirectory',
@@ -33,7 +40,7 @@ export default function Controller(props: ControllerProps): JSX.Element {
     });
 
     if (pickValue.fileCopyUri) {
-      const outFilePath = getDir('cache') + '/video_' + new Date().getTime() + '.mp4';
+      const outFilePath = getDir('cache') + '/videos/video_' + new Date().getTime() + '.mp4';
       videoTranscoding(pickValue.fileCopyUri, outFilePath);
     } else {
       Alert.alert('选择视频出错');
@@ -45,14 +52,24 @@ export default function Controller(props: ControllerProps): JSX.Element {
     FFmepg.transcoding(
       targetFile,
       outFile,
-      async () => {
+      () => {
         setProgress(100);
         props.setVideoUri(outFile);
+        getThumbnailList(outFile);
       },
       progress => {
         setProgress(progress);
       },
     );
+  };
+
+  const getThumbnailList = (filePath: string) => {
+    const cacheDir = fileSystem.CACHE_ROOT_DIR + 'thumbnails/';
+    const outImage = `${cacheDir}image_%02d.jpg`;
+    FFmpegKit.execute(`-i ${filePath} -r 2 ${outImage}`).then(async () => {
+      const readDir = await RNFS.readDir(cacheDir);
+      props.setThumbnailList(readDir.map(item => fileSystem.ROOT_PREFIX + item.path));
+    });
   };
 
   return (

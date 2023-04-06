@@ -4,9 +4,10 @@ import {initialState, reducer} from './views/reducer';
 
 // children
 import VideoView from './views/VideoView';
+import TimeAxios from './views/TimeAxios';
 import Controller from './views/Controller';
 // action
-import {setVideoUri} from './views/action';
+import {SetThumbnailList, setVideoUri} from './views/action';
 
 export default function App(): JSX.Element {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -16,7 +17,11 @@ export default function App(): JSX.Element {
       <View style={styles.container}>
         <VideoView uri={state.uri} />
       </View>
-      <Controller setVideoUri={(uri: string) => dispatch(setVideoUri(uri))} />
+      <TimeAxios thumbnailList={state.thumbnailList} />
+      <Controller
+        setVideoUri={(uri: string) => dispatch(setVideoUri(uri))}
+        setThumbnailList={(list: string[]) => dispatch(SetThumbnailList(list))}
+      />
     </View>
   );
 }
