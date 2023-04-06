@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
 import {StyleSheet, View, Text} from 'react-native';
-import Video, {type OnProgressData} from 'react-native-video';
+import Video, {type OnProgressData, type OnLoadData} from 'react-native-video';
 import Animated, {useAnimatedStyle} from 'react-native-reanimated';
 import {GestureDetector, Gesture} from 'react-native-gesture-handler';
 import {VIDEO_HEIGHT} from '../constants/video';
+import {timeFormat} from '../helpers/utils';
 
 interface VideoProps {
   uri: string | null;
@@ -11,52 +12,70 @@ interface VideoProps {
 
 export default function VideoView(props: VideoProps): JSX.Element {
   const [visible, setVisible] = useState<boolean>(false);
-  const [playTime, setPlayTime] = useState<[string, string]>(['00:00', '00:00']);
+  const [playTime, setPlayTime] = useState<[number, number]>([0, 0]);
+
+  const [moveVisible, setMoveVisible] = useState<boolean>(false);
+  const [moveTime, setMoveTime] = useState<[number, number]>([0, 0]);
 
   const onVideoProgress = (data: OnProgressData) => {
-    setPlayTime([timeFormat(data.currentTime), timeFormat(data.seekableDuration)]);
-    console.log(timeFormat(data.currentTime), timeFormat(data.playableDuration), timeFormat(data.seekableDuration));
+    setPlayTime([data.currentTime, data.seekableDuration]);
   };
-
-  const timeFormat = (time: number) => {
-    const fn = (num: number) => {
-      return num < 10 ? '0' + num : num;
-    };
-    const minutes = Math.floor(time / 60),
-      seconds = Math.floor(time % 60);
-
-    return fn(minutes) + ':' + fn(seconds);
+  const onVideoLoad = (data: OnLoadData) => {
+    setPlayTime([data.currentTime, data.duration]);
+    setMoveTime([data.currentTime, data.duration]);
   };
 
   const controlAnimatedStyle = useAnimatedStyle(() => ({bottom: visible ? 0 : -30}), [visible]);
   const moveGesture = Gesture.Pan()
     .onStart(event => {
-      // console.log('pan start', event);
+      console.log('onStart');
+      setMoveVisible(true);
     })
-    .onUpdate(() => {
-      console.log('onUpdate');
+    .onUpdate(event => {
+      // let tiggerDirection: 'translationX' | 'translationY' | null = null;
+      // tiggerDirection = Math.abs(event.translationX) > Math.abs(event.translationY) ? 'translationX' : 'translationY';
+      // console.log(event[tiggerDirection] > 0 ? 'right' : 'left');
     })
     .onEnd(event => {
-      let tiggerDirection: 'translationX' | 'translationY' | null = null;
-      tiggerDirection = Math.abs(event.translationX) > Math.abs(event.translationY) ? 'translationX' : 'translationY';
-      console.log(event[tiggerDirection] > 0 ? 'right' : 'left');
-      // console.log('pan end', event);
-    });
+      console.log('onEnd');
+      setMoveVisible(false);
+    })
+    .runOnJS(true);
+
+  const RenderMoveTimeBox = () => {
+    if (moveVisible) {
+      return (
+        <View style={styles.moveTimeBox}>
+          <Text style={styles.moveText}>{timeFormat(moveTime[0])}</Text>
+          <Text style={styles.moveLine}>|</Text>
+          <Text style={styles.moveText}>{timeFormat(moveTime[1])}</Text>
+        </View>
+      );
+    }
+    return null;
+  };
 
   return (
     <View style={styles.videoContainer}>
       {props.uri && (
-        <Video source={{uri: props.uri}} resizeMode="cover" style={styles.backgroundVideo} onProgress={onVideoProgress} />
+        <Video
+          source={{uri: props.uri}}
+          resizeMode="cover"
+          style={styles.backgroundVideo}
+          onProgress={onVideoProgress}
+          onLoad={onVideoLoad}
+        />
       )}
       <GestureDetector gesture={moveGesture}>
         <View style={styles.controlContainer}>
+          <RenderMoveTimeBox />
           <Animated.View style={[styles.bottomMenu, controlAnimatedStyle]}>
             <Text style={styles.playTime} adjustsFontSizeToFit={true}>
-              {playTime[0]}
+              {timeFormat(playTime[0])}
             </Text>
             <View style={styles.progressBar}></View>
             <Text style={styles.playTime} adjustsFontSizeToFit={true}>
-              {playTime[1]}
+              {timeFormat(playTime[1])}
             </Text>
           </Animated.View>
         </View>
@@ -82,8 +101,25 @@ const styles = StyleSheet.create({
   controlContainer: {
     width: '100%',
     height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
     overflow: 'hidden',
     position: 'relative',
+  },
+  moveTimeBox: {
+    padding: 16,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 6,
+  },
+  moveText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  moveLine: {
+    marginHorizontal: 5,
+    color: '#fff',
+    fontSize: 16,
   },
   bottomMenu: {
     width: '100%',
