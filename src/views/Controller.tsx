@@ -29,10 +29,10 @@ export default function Controller(props: ControllerProps): JSX.Element {
 
   const pickVideo = async () => {
     // await requestPermission('android.permission.READ_EXTERNAL_STORAGE');
-    fileSystem.clearCache('thumbnails').then(res => console.log('清理thumbnail: ', res));
+    // fileSystem.clearCache('thumbnails').then(res => console.log('清理thumbnail: ', res));
 
     await fileSystem.mkdir('videos', 'cache');
-    await fileSystem.mkdir('thumbnails', 'cache');
+    // await fileSystem.mkdir('thumbnails', 'cache');
 
     const pickValue = await DocumentPicker.pickSingle({
       copyTo: 'cachesDirectory',
@@ -40,8 +40,9 @@ export default function Controller(props: ControllerProps): JSX.Element {
     });
 
     if (pickValue.fileCopyUri) {
-      const outFilePath = getDir('cache') + '/videos/video_' + new Date().getTime() + '.mp4';
-      videoTranscoding(pickValue.fileCopyUri, outFilePath);
+      props.setVideoUri(pickValue.fileCopyUri);
+      // const outFilePath = getDir('cache') + '/videos/video_' + new Date().getTime() + '.mp4';
+      // videoTranscoding(pickValue.fileCopyUri, outFilePath);
     } else {
       Alert.alert('选择视频出错');
     }
