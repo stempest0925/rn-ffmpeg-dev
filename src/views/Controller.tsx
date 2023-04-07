@@ -40,7 +40,7 @@ export default function Controller(props: ControllerProps): JSX.Element {
     });
 
     if (pickValue.fileCopyUri) {
-      props.setVideoUri(pickValue.fileCopyUri);
+      props.setVideoUri(pickValue.uri);
       // const outFilePath = getDir('cache') + '/videos/video_' + new Date().getTime() + '.mp4';
       // videoTranscoding(pickValue.fileCopyUri, outFilePath);
     } else {
