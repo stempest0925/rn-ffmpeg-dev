@@ -7,7 +7,7 @@ import {initialState, reducer} from './views/reducer';
 FFmpegKitConfig.disableLogs();
 
 // children
-import VideoView from './views/VideoView';
+import VideoView from './views/VideoPlayer';
 // import TimeAxios from './views/TimeAxios';
 import Controller from './views/Controller';
 // action

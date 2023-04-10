@@ -1,78 +1,96 @@
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {StyleSheet, View, Text, Dimensions} from 'react-native';
 import Video, {type OnProgressData, type OnLoadData} from 'react-native-video';
 import Animated, {useAnimatedStyle} from 'react-native-reanimated';
-import {
-  GestureDetector,
-  Gesture,
-  type GestureUpdateEvent,
-  type PanGestureHandlerEventPayload,
-} from 'react-native-gesture-handler';
+import {GestureDetector, Gesture} from 'react-native-gesture-handler';
 import {VIDEO_HEIGHT} from '../constants/video';
 import {timeFormat} from '../helpers/utils';
-import {throttle} from '../helpers/optimize';
+// import {throttle} from '../helpers/optimize';
 
 interface VideoProps {
   uri: string | null;
 }
-export default function VideoView(props: VideoProps): JSX.Element {
-  const [visible, setVisible] = useState<boolean>(true);
+
+export default function VideoPlayer(props: VideoProps): JSX.Element {
+  // Ref
   const videoRef = useRef<Video | null>(null);
+  // with control
+  const [visible, setVisible] = useState<boolean>(true);
+  const [paused, setPaused] = useState<boolean>(false);
   const [playTime, setPlayTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
 
-  const [moveVisible, setMoveVisible] = useState<boolean>(false);
-  const [moveTime, setMoveTime] = useState<number>(0);
+  // with seek
+  const [seekVisible, setSeekVisible] = useState<boolean>(false);
+  const [startSeekTime, setStartSeekTime] = useState<number>(0);
+  const [seekTime, setSeekTime] = useState<number>(0);
 
-  const onVideoProgress = (data: OnProgressData) => {
-    setPlayTime(data.currentTime);
-  };
-
+  // 生命周期
   const onVideoLoad = (data: OnLoadData) => {
+    console.log('video loaded', data.currentTime, data.duration);
+
     setPlayTime(data.currentTime);
     setDuration(data.duration);
   };
+  const onVideoPlayProgress = (data: OnProgressData) => {
+    console.log('video play progress', data.currentTime);
 
-  const controlAnimatedStyle = useAnimatedStyle(() => ({bottom: visible ? 0 : -30}), [visible]);
-  const moveGesture = Gesture.Pan()
+    setPlayTime(data.currentTime);
+  };
+  const onVideoPlayEnd = () => {
+    console.log('video play end');
+
+    setPlayTime(duration);
+  };
+
+  // 手势
+  const dragGesture = Gesture.Pan()
     .onStart(() => {
-      console.log('pan start');
+      console.log('pan start', playTime);
 
-      setMoveVisible(true);
-      setMoveTime(playTime);
+      setPaused(true);
+      setStartSeekTime(playTime);
+      setSeekVisible(true);
     })
-    .onUpdate(
-      throttle((event: GestureUpdateEvent<PanGestureHandlerEventPayload>) => {
-        const time = countMoveSeconds(event.translationX, event.translationY);
-        setMoveTime(time);
-      }, 100),
-    )
-    .onEnd(event => {
-      console.log('pan end');
+    .onChange(event => {
+      if (event.translationX === 0 && event.translationY === 0) return;
 
-      const time = countMoveSeconds(event.translationX, event.translationY);
-      setMoveTime(time);
-      setPlayTime(time);
-      videoRef.current?.seek(time);
-      setMoveVisible(false);
+      const time = countSeekTime(event.translationX, event.translationY);
+      setSeekTime(time);
+
+      console.log('pan change', time);
+    })
+    .onEnd(() => {
+      console.log('pan end', seekTime);
+
+      videoRef.current?.seek(seekTime);
+      setSeekVisible(false);
+      setPlayTime(seekTime);
+      setPaused(false);
     })
     .runOnJS(true);
 
-  const countMoveSeconds = (translationX: number, translationY: number) => {
-    const isXOrY = Math.abs(translationX) > Math.abs(translationY) ? 'translationX' : 'translationY';
-    if (isXOrY === 'translationX') {
-      const direction = translationX > 0 ? 'right' : 'left';
-      const moveRatio = Math.abs(translationX) / Dimensions.get('window').width;
-      const moveSeconds = Math.floor(duration * moveRatio);
-      console.log(moveRatio, moveSeconds);
+  // 计算拖拽时间
+  const countSeekTime = (translationX: number, translationY: number, factor: number = 0.5) => {
+    const dragX = Math.round(translationX),
+      dragY = Math.round(translationY);
 
-      const finalTime = direction === 'left' ? Math.max(playTime - moveSeconds, 0) : Math.min(playTime + moveSeconds, duration);
+    const isXOrY = Math.abs(dragX) > Math.abs(dragY) ? 'X' : 'Y';
+    if (isXOrY === 'X') {
+      const dragRatio = Number((Math.abs(dragX) / Dimensions.get('window').width).toFixed(2));
+      const dragSeconds = Math.round(duration * dragRatio * factor);
+
+      const finalTime = dragX < 0 ? Math.max(startSeekTime - dragSeconds, 0) : Math.min(startSeekTime + dragSeconds, duration);
+
       return finalTime;
     } else {
-      return 0;
+      return 60;
     }
   };
 
+  // 动画
+  const controlAnimatedStyle = useAnimatedStyle(() => ({bottom: visible ? 0 : -30}), [visible]);
+  // 进度
   const progress = useMemo(() => {
     if (playTime <= 0) return 0;
     return Math.ceil((playTime / duration) * 100);
@@ -84,20 +102,22 @@ export default function VideoView(props: VideoProps): JSX.Element {
         <Video
           source={{uri: props.uri}}
           ref={ref => (videoRef.current = ref)}
+          paused={paused}
           resizeMode="contain"
           style={styles.backgroundVideo}
           progressUpdateInterval={1000}
-          onProgress={onVideoProgress}
           onLoad={onVideoLoad}
+          onProgress={onVideoPlayProgress}
+          onEnd={onVideoPlayEnd}
         />
       )}
-      <GestureDetector gesture={moveGesture}>
+      <GestureDetector gesture={dragGesture}>
         <View style={styles.controlContainer}>
-          {moveVisible && (
-            <View style={styles.moveTimeBox}>
-              <Text style={styles.moveText}>{timeFormat(moveTime)}</Text>
-              <Text style={styles.moveLine}>|</Text>
-              <Text style={styles.moveText}>{timeFormat(duration)}</Text>
+          {seekVisible && (
+            <View style={styles.dragTimeBox}>
+              <Text style={styles.dragText}>{timeFormat(seekTime)}</Text>
+              <Text style={styles.dragLine}>|</Text>
+              <Text style={styles.dragText}>{timeFormat(duration)}</Text>
             </View>
           )}
           <Animated.View style={[styles.bottomMenu, controlAnimatedStyle]}>
@@ -139,17 +159,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
-  moveTimeBox: {
+  dragTimeBox: {
     padding: 16,
     flexDirection: 'row',
     backgroundColor: 'rgba(0,0,0,0.4)',
     borderRadius: 6,
   },
-  moveText: {
+  dragText: {
     color: '#fff',
     fontSize: 16,
   },
-  moveLine: {
+  dragLine: {
     marginHorizontal: 5,
     color: '#fff',
     fontSize: 16,
