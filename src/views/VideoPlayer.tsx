@@ -1,7 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {StyleSheet, View, Text, Dimensions} from 'react-native';
 import Video, {type OnProgressData, type OnLoadData} from 'react-native-video';
-import Animated, {useAnimatedStyle} from 'react-native-reanimated';
+import Animated, {useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 import {GestureDetector, Gesture} from 'react-native-gesture-handler';
 import {VIDEO_HEIGHT} from '../constants/video';
 import {timeFormat} from '../helpers/utils';
@@ -16,6 +16,7 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
   const videoRef = useRef<Video | null>(null);
   // with control
   const [visible, setVisible] = useState<boolean>(true);
+  const bottomMenuAnimated = useSharedValue(0);
   const [paused, setPaused] = useState<boolean>(false);
   const [playTime, setPlayTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
@@ -44,6 +45,24 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
   };
 
   // 手势
+  const singleTapGesture = Gesture.Tap()
+    .onEnd(() => {
+      console.log('single click');
+
+      setVisible(!visible);
+      bottomMenuAnimated.value = withTiming(!visible ? 30 : 0);
+    })
+    .runOnJS(true);
+
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onEnd(() => {
+      console.log('double click');
+
+      setPaused(!paused);
+    })
+    .runOnJS(true);
+
   const dragGesture = Gesture.Pan()
     .onStart(() => {
       console.log('pan start', playTime);
@@ -70,6 +89,8 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
     })
     .runOnJS(true);
 
+  const composedGesture = Gesture.Race(Gesture.Exclusive(doubleTapGesture, singleTapGesture), dragGesture);
+
   // 计算拖拽时间
   const countSeekTime = (translationX: number, translationY: number, factor: number = 0.5) => {
     const dragX = Math.round(translationX),
@@ -89,7 +110,8 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
   };
 
   // 动画
-  const controlAnimatedStyle = useAnimatedStyle(() => ({bottom: visible ? 0 : -30}), [visible]);
+  const controlAnimatedStyle = useAnimatedStyle(() => ({transform: [{translateY: bottomMenuAnimated.value}]}));
+
   // 进度
   const progress = useMemo(() => {
     if (playTime <= 0) return 0;
@@ -111,7 +133,7 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
           onEnd={onVideoPlayEnd}
         />
       )}
-      <GestureDetector gesture={dragGesture}>
+      <GestureDetector gesture={composedGesture}>
         <View style={styles.controlContainer}>
           {seekVisible && (
             <View style={styles.dragTimeBox}>
