@@ -1,0 +1,14 @@
+diff --git a/node_modules/react-native-video/android/src/main/java/com/brentvatne/react/ReactVideoView.java b/node_modules/react-native-video/android/src/main/java/com/brentvatne/react/ReactVideoView.java
+index f3f5fe7..5c13e35 100644
+--- a/node_modules/react-native-video/android/src/main/java/com/brentvatne/react/ReactVideoView.java
++++ b/node_modules/react-native-video/android/src/main/java/com/brentvatne/react/ReactVideoView.java
+@@ -637,7 +637,8 @@ public class ReactVideoView extends ScalableVideoView implements
+     public void seekTo(int msec) {
+         if (mMediaPlayerValid) {
+             mSeekTime = msec;
+-            super.seekTo(msec);
++            // super.seekTo(msec);
++            super.mMediaPlayer.seekTo(msec, MediaPlayer.SEEK_CLOSEST);
+             if (isCompleted && mVideoDuration != 0 && msec < mVideoDuration) {
+                 isCompleted = false;
+             }

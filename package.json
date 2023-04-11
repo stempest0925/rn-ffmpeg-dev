@@ -7,11 +7,15 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "postinstall": "patch-package"
   },
   "dependencies": {
+    "@react-native-community/slider": "^4.4.2",
     "ffmpeg-kit-react-native": "^5.1.0",
     "immer": "^9.0.21",
+    "patch-package": "^6.5.1",
+    "postinstall-postinstall": "^2.1.0",
     "react": "18.2.0",
     "react-native": "0.71.4",
     "react-native-document-picker": "^8.2.0",
