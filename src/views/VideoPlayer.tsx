@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {StyleSheet, View, Text, Dimensions} from 'react-native';
 import Video, {type OnProgressData, type OnLoadData} from 'react-native-video';
 import Animated, {useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
@@ -6,9 +6,11 @@ import {GestureDetector, Gesture} from 'react-native-gesture-handler';
 import {VIDEO_HEIGHT} from '../constants/video';
 import {timeFormat} from '../helpers/utils';
 // import {throttle} from '../helpers/optimize';
+import VolumeOffIcon from './Icon/VolumeOff';
 
 interface VideoProps {
   uri: string | null;
+  poster: string | null;
 }
 
 export default function VideoPlayer(props: VideoProps): JSX.Element {
@@ -25,14 +27,19 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
   const [seekVisible, setSeekVisible] = useState<boolean>(false);
   const [startSeekTime, setStartSeekTime] = useState<number>(0);
   const [seekTime, setSeekTime] = useState<number>(0);
+  // with volume
+  const [volumeVisible, setVolumeVisible] = useState<boolean>(false);
+  const [volume, setVolume] = useState<number>(80);
 
   // 生命周期
+  const onVideoStart = () => {};
   const onVideoLoad = (data: OnLoadData) => {
     console.log('video loaded', data.currentTime, data.duration);
 
     setPlayTime(data.currentTime);
     setDuration(data.duration);
   };
+  const onVideoError = () => {};
   const onVideoPlayProgress = (data: OnProgressData) => {
     console.log('video play progress', data.currentTime);
 
@@ -68,8 +75,9 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
       console.log('pan start', playTime);
 
       setPaused(true);
-      setStartSeekTime(playTime);
-      setSeekVisible(true);
+      // setStartSeekTime(playTime);
+      // setSeekVisible(true);
+      setVolumeVisible(true);
     })
     .onChange(event => {
       if (event.translationX === 0 && event.translationY === 0) return;
@@ -82,9 +90,10 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
     .onEnd(() => {
       console.log('pan end', seekTime);
 
-      videoRef.current?.seek(seekTime);
-      setSeekVisible(false);
-      setPlayTime(seekTime);
+      setVolumeVisible(false);
+      // videoRef.current?.seek(seekTime);
+      // setSeekVisible(false);
+      // setPlayTime(seekTime);
       setPaused(false);
     })
     .runOnJS(true);
@@ -125,10 +134,14 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
           source={{uri: props.uri}}
           ref={ref => (videoRef.current = ref)}
           paused={paused}
+          volume={volume}
           resizeMode="contain"
+          poster={props.uri}
           style={styles.backgroundVideo}
           progressUpdateInterval={1000}
+          onLoadStart={onVideoStart}
           onLoad={onVideoLoad}
+          onError={onVideoError}
           onProgress={onVideoPlayProgress}
           onEnd={onVideoPlayEnd}
         />
@@ -142,12 +155,20 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
               <Text style={styles.dragText}>{timeFormat(duration)}</Text>
             </View>
           )}
+          {volumeVisible && (
+            <View style={styles.dragVolumeBox}>
+              <VolumeOffIcon size={42} color="rgba(255,255,255,0.6)" />
+              <View style={styles.dragVolumeTrack}>
+                <View style={[styles.dragVolumeProgress, {height: volume + '%'}]} />
+              </View>
+            </View>
+          )}
           <Animated.View style={[styles.bottomMenu, controlAnimatedStyle]}>
             <Text style={styles.playTime} adjustsFontSizeToFit={true}>
               {timeFormat(playTime)}
             </Text>
             <View style={styles.progressTrack}>
-              <View style={[styles.progressBar, {width: `${progress}%`}]}></View>
+              <View style={[styles.progressBar, {width: `${progress}%`}]} />
             </View>
             <Text style={styles.playTime} adjustsFontSizeToFit={true}>
               {timeFormat(duration)}
@@ -181,21 +202,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
-  dragTimeBox: {
-    padding: 16,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: 6,
-  },
-  dragText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-  dragLine: {
-    marginHorizontal: 5,
-    color: '#fff',
-    fontSize: 16,
-  },
+
   bottomMenu: {
     width: '100%',
     height: 30,
@@ -225,5 +232,44 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: 'rgba(255,255,255,0.9)',
     borderRadius: 3,
+  },
+
+  dragTimeBox: {
+    padding: 16,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 6,
+  },
+  dragText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  dragLine: {
+    marginHorizontal: 5,
+    color: '#fff',
+    fontSize: 16,
+  },
+
+  dragVolumeBox: {
+    padding: 18,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 6,
+  },
+  dragVolumeTrack: {
+    width: 5,
+    height: '100%',
+    marginLeft: 12,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 3,
+    position: 'relative',
+  },
+  dragVolumeProgress: {
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: 3,
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
   },
 });

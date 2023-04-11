@@ -19,7 +19,7 @@ export default function App(): JSX.Element {
   return (
     <GestureHandlerRootView style={styles.container}>
       <View style={styles.container}>
-        <VideoView uri={state.uri} />
+        <VideoView uri={state.uri} poster="https://stempest0925.github.io/static/media/banner-cover.47f71d48.jpg" />
       </View>
       {/* <TimeAxios thumbnailList={state.thumbnailList} /> */}
       <Controller
