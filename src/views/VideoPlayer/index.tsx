@@ -1,5 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
-import { StyleSheet, View, Text, Dimensions } from "react-native";
+import React, { useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import Video, { type OnProgressData, type OnLoadData } from "react-native-video";
 import { VIDEO_HEIGHT } from "../../constants/video";
 import Controller from "./Controller";
@@ -17,25 +17,19 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
   const [playTime, setPlayTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
 
-  const [volume, setVolume] = useState<number>(80);
+  const [volume, setVolume] = useState<number>(0.8);
 
   // 生命周期
   const onVideoStart = () => {};
   const onVideoLoad = (data: OnLoadData) => {
-    console.log("video loaded", data.currentTime, data.duration);
-
     setPlayTime(data.currentTime);
     setDuration(data.duration);
   };
   const onVideoError = () => {};
   const onVideoPlayProgress = (data: OnProgressData) => {
-    // console.log("video play progress", data.currentTime);
-
     setPlayTime(data.currentTime);
   };
   const onVideoPlayEnd = () => {
-    console.log("video play end");
-
     setPlayTime(duration);
   };
   const onVideoSought = () => {
@@ -45,6 +39,9 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
   const seekTo = (seconds: number) => {
     setPaused(true);
     videoRef.current?.seek(seconds);
+  };
+  const volumeSet = (_volume: number) => {
+    setVolume(_volume);
   };
   const doubleTap = () => {
     setPaused(!paused);
@@ -58,8 +55,8 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
           ref={ref => (videoRef.current = ref)}
           paused={paused}
           volume={volume}
-          resizeMode="contain"
           poster={props.uri}
+          resizeMode="contain"
           style={styles.backgroundVideo}
           progressUpdateInterval={1000} //300
           onLoadStart={onVideoStart}
@@ -70,7 +67,14 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
           onSeek={onVideoSought}
         />
       )}
-      <Controller currentTime={playTime} duration={duration} onSeekTo={seekTo} onDoubleTap={doubleTap} />
+      <Controller
+        currentTime={playTime}
+        duration={duration}
+        volume={volume}
+        onSeekTo={seekTo}
+        onVolumeSet={volumeSet}
+        onDoubleTap={doubleTap}
+      />
     </View>
   );
 }

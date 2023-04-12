@@ -1,21 +1,30 @@
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import VolumeOffIcon from "../Icon/VolumeOff";
+import VolumeLowIcon from "../Icon/VolumeLow";
+import VolumeHighIcon from "../Icon/VolumeHigh";
 
-interface VolumeToastProps {
-  volume: number;
-}
-
-export default function VolumeToast(props: VolumeToastProps) {
+export default function VolumeToast() {
   const [visible, setVisible] = useState(false);
+  const [volume, setVolume] = useState(0);
+
+  const VolumeIconRender = () => {
+    if (volume === 0) {
+      return <VolumeOffIcon size={42} color="rgba(255,255,255,0.6)" />;
+    } else if (volume < 50) {
+      return <VolumeLowIcon size={42} color="rgba(255,255,255,0.6)" />;
+    } else {
+      return <VolumeHighIcon size={42} color="rgba(255,255,255,0.6)" />;
+    }
+  };
 
   const VolumeToastRender = () => {
     if (visible) {
       return (
         <View style={styles.volumeContainer}>
-          <VolumeOffIcon size={42} color="rgba(255,255,255,0.6)" />
+          <VolumeIconRender />
           <View style={styles.volumeTrack}>
-            <View style={[styles.volumeProgress, { height: props.volume + "%" }]} />
+            <View style={[styles.volumeProgress, { height: volume * 100 + "%" }]} />
           </View>
         </View>
       );
@@ -23,7 +32,12 @@ export default function VolumeToast(props: VolumeToastProps) {
     return null;
   };
 
-  return { VolumeToastRender, openVolumeToast: () => setVisible(true), closeVolumeToast: () => setVisible(false) };
+  return {
+    VolumeToastRender,
+    setVolume,
+    openVolumeToast: () => setVisible(true),
+    closeVolumeToast: () => setVisible(false),
+  };
 }
 
 const styles = StyleSheet.create({
