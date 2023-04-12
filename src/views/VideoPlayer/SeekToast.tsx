@@ -9,7 +9,6 @@ interface SeekToastProps {
 export default function SeekToast(props: SeekToastProps) {
   const [visible, setVisible] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
-  console.log("SeekToast", visible);
 
   const SeekToastRender = () => {
     if (visible) {

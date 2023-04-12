@@ -29,7 +29,7 @@ export default function VideoPlayer(props: VideoProps): JSX.Element {
   };
   const onVideoError = () => {};
   const onVideoPlayProgress = (data: OnProgressData) => {
-    console.log("video play progress", data.currentTime);
+    // console.log("video play progress", data.currentTime);
 
     setPlayTime(data.currentTime);
   };

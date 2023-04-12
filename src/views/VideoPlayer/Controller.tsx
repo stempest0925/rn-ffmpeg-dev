@@ -14,121 +14,131 @@ interface ControllerProps {
   onSeekTo: (seconds: number) => void;
   onDoubleTap: () => void;
 }
+type DragDataType = {
+  first: boolean;
+  direction?: "x" | "y";
+  startSeekTime?: number;
+  seekTime?: number;
+};
+type countDargDataReturn = {
+  direction: "x" | "y";
+  isNegative: boolean;
+  ratio: number;
+};
 
 export default function Controller(props: ControllerProps): JSX.Element {
+  const dragDataRef = useRef<DragDataType>({ first: true });
+
   const [visible, setVisible] = useState<boolean>(false);
-  const touchAxisSizeRef = useRef<{ x: number; y: number } | null>(null);
-  const dragDataRef = useRef<{ first: boolean; direction: "x" | "y" | null }>({ first: true, direction: null });
+  const bottomMenuStyle = useAnimatedStyle(() => ({ bottom: withTiming(visible ? 0 : "-100%") }));
 
   const { SeekToastRender, setSeekTime, openSeekToast, closeSeekToast } = SeekToast({ duration: props.duration });
   const { VolumeToastRender, openVolumeToast, closeVolumeToast } = VolumeToast({ volume: 80 });
 
-  const bottomMenuStyle = useAnimatedStyle(() => ({ bottom: withTiming(visible ? 0 : "-100%") }));
-
   // 返回方向、正负、拖拽比例
-  const countDargData = (params: {
-    translationX: number;
-    translationY: number;
-    x: number;
-    y: number;
-  }):
-    | {
-        direction: "x" | "y";
-        isNegative: boolean;
-        ratio: number;
-      }
-    | undefined => {
-    if (touchAxisSizeRef.current) {
-      const dragX = Math.round(params.translationX),
-        dragY = Math.round(params.translationY);
+  const countDargData = (translationX: number, translationY: number): countDargDataReturn => {
+    const dragX = Math.round(translationX),
+      dragY = Math.round(translationY);
 
-      const direction = Math.abs(dragX) > Math.abs(dragY) ? "x" : "y";
-      const isNegative = direction === "x" ? dragX < 0 : dragY < 0;
-      const ratio = Number((Math.abs(params[direction]) / touchAxisSizeRef.current[direction]).toFixed(2));
+    const direction = Math.abs(dragX) > Math.abs(dragY) ? "x" : "y";
+    const isNegative = direction === "x" ? dragX < 0 : dragY < 0;
+    const ratio = (() => {
+      const { width, height } = Dimensions.get("window");
+      const calculateParams = {
+        x: { dragDistance: dragX, visibleSize: width },
+        y: { dragDistance: dragY, visibleSize: height },
+      };
+      return Number(
+        (Math.abs(calculateParams[direction].dragDistance) / calculateParams[direction].visibleSize).toFixed(2),
+      );
+    })();
 
-      return { direction, isNegative, ratio };
-    }
+    return { direction, isNegative, ratio };
   };
 
   // gestures
   const singleTapGesture = Gesture.Tap()
     .onEnd(() => setVisible(!visible))
     .runOnJS(true);
+
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
     .onEnd(() => props.onDoubleTap())
     .runOnJS(true);
+
   const dragGesture = Gesture.Pan()
+    .hitSlop({ horizontal: -32 })
     .onStart(() => {
-      // 初始化数据
-      dragDataRef.current = { first: true, direction: null };
-      console.log("】】】】】】】】】】】】dragDataRef.current", dragDataRef.current);
+      dragDataRef.current = { first: true };
     })
     .onChange(event => {
-      const dargData = countDargData({
-        translationX: event.translationX,
-        translationY: event.translationY,
-        x: event.x,
-        y: event.y,
-      });
+      if (event.translationX === 0 && event.translationY === 0) return;
 
-      if (dargData) {
-        dragDataRef.current.direction = dargData.direction;
-        if (dargData.direction === "x") {
-          console.log("【【【【【【【【【dragDataRef.current.first", dragDataRef.current.first);
+      const dargData = countDargData(event.translationX, event.translationY);
+      const executeFn = {
+        x: () => {
           if (dragDataRef.current.first) {
-            dragDataRef.current.first = false;
-            console.log("---------------openSeekToast");
+            dragDataRef.current = { first: false, direction: dargData.direction, startSeekTime: props.currentTime };
             openSeekToast();
           }
-
           const factor = 0.5; //系数
           const seconds = Math.round(props.duration * dargData.ratio * factor);
+          const startTime = dragDataRef.current.startSeekTime || 0;
+          // 必须在min/max中完成小数计算，以免后续保留小数超出范围
           const finalSeconds = dargData.isNegative
-            ? Math.max(props.currentTime - seconds, 0)
-            : Math.min(props.currentTime + seconds, props.duration);
-          console.log("finalSeconds", finalSeconds);
+            ? Math.max(Number((startTime - seconds).toFixed(2)), 0)
+            : Math.min(Number((startTime + seconds).toFixed(2)), props.duration);
 
-          // setSeekTime(finalSeconds);
-        } else {
+          // do seek something
+          setSeekTime(finalSeconds);
+          dragDataRef.current.seekTime = finalSeconds;
+        },
+        y: () => {
           if (dragDataRef.current.first) {
-            dragDataRef.current.first = false;
+            dragDataRef.current = { first: false, direction: dargData.direction };
             openVolumeToast();
           }
           // do volume something
-        }
-      }
+        },
+      };
+      executeFn[dargData.direction]();
     })
     .onEnd(() => {
-      if (dragDataRef.current.direction === "x") {
-        closeSeekToast();
-      } else {
-        closeVolumeToast();
+      const direction = dragDataRef.current.direction;
+      if (direction) {
+        const executeFn = {
+          x: () => {
+            const seekTime = dragDataRef.current.seekTime;
+            seekTime && props.onSeekTo(seekTime);
+            closeSeekToast();
+          },
+          y: () => {
+            closeVolumeToast();
+          },
+        };
+        executeFn[direction]();
       }
     })
     .runOnJS(true);
+
   const composedGesture = Gesture.Race(Gesture.Exclusive(doubleTapGesture, singleTapGesture), dragGesture);
 
   return (
-    <View style={styles.controller}>
-      <GestureDetector gesture={composedGesture}>
-        <View
-          style={styles.touchArea}
-          onLayout={e => (touchAxisSizeRef.current = { x: e.nativeEvent.layout.width, y: e.nativeEvent.layout.height })}
-        />
-      </GestureDetector>
-      {/* <SeekToastRender /> */}
-      {/* <VolumeToastRender /> */}
-      <Animated.View style={[styles.bottomMenu, bottomMenuStyle]}>
-        <Text style={styles.timeText} adjustsFontSizeToFit={true}>
-          {timeFormat(props.currentTime)}
-        </Text>
-        <ProgressBar currentTime={props.currentTime} duration={props.duration} onSeekTo={props.onSeekTo} />
-        <Text style={styles.timeText} adjustsFontSizeToFit={true}>
-          {timeFormat(props.duration)}
-        </Text>
-      </Animated.View>
-    </View>
+    <GestureDetector gesture={composedGesture}>
+      <View style={styles.controller}>
+        <SeekToastRender />
+        <VolumeToastRender />
+        <Animated.View style={[styles.bottomMenu, bottomMenuStyle]}>
+          <Text style={styles.timeText} adjustsFontSizeToFit={true}>
+            {timeFormat(props.currentTime)}
+          </Text>
+          <ProgressBar currentTime={props.currentTime} duration={props.duration} onSeekTo={props.onSeekTo} />
+          <Text style={styles.timeText} adjustsFontSizeToFit={true}>
+            {timeFormat(props.duration)}
+          </Text>
+        </Animated.View>
+      </View>
+    </GestureDetector>
   );
 }
 
@@ -140,14 +150,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     overflow: "hidden",
     position: "relative",
-  },
-
-  touchArea: {
-    position: "absolute",
-    top: 0,
-    right: "10%",
-    bottom: 0,
-    left: "10%",
   },
 
   bottomMenu: {
