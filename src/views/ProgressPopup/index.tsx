@@ -1,60 +1,33 @@
-import React, {useState} from 'react';
-import {View, Text, TouchableHighlight, StyleSheet} from 'react-native';
-import useSvgProgress from './useSvgProgress_withCircle';
+import React from "react";
+import { View, Text, TouchableHighlight, StyleSheet } from "react-native";
+import { observer } from "mobx-react-lite";
 
-interface ProgressPopupProps {
-  onCancel: () => void;
+import SvgProgress from "./useSvgProgress_withCircle";
+import ProgressStore from "../../models/progress";
+
+function ProgressPopup() {
+  if (ProgressStore.visible) {
+    return (
+      <View style={styles.container}>
+        <SvgProgress progress={ProgressStore.num} size={250} strokeWidth={12} />
+        <Text style={styles.progressText}>{ProgressStore.text}</Text>
+        <TouchableHighlight style={styles.cancelBtn} onPress={() => {}}>
+          <Text style={styles.cancelText}>CANCEL</Text>
+        </TouchableHighlight>
+      </View>
+    );
+  }
+  return null;
 }
-// 要么把任务放进来，内部管理进度和取消，要么就不要传递相关数据，增加耦合。
-export default function useProgressPopup(props: ProgressPopupProps) {
-  const [visible, setVisible] = useState<boolean>(false);
-  const {SvgProgressRender, toggleProgress} = useSvgProgress({size: 250, strokeWidth: 12});
 
-  const toggleVisible = (_visible?: boolean) => {
-    setVisible(_visible === undefined ? !_visible : _visible);
-  };
-
-  const setProgress = (_progress: number) => {
-    toggleProgress(_progress);
-    if (_progress >= 100) {
-      toggleVisible(false);
-    }
-  };
-
-  const onCancel = () => {
-    toggleVisible(false);
-    props.onCancel();
-  };
-
-  const ProgressPopup = () => {
-    if (visible) {
-      return (
-        <View style={styles.container}>
-          <SvgProgressRender />
-          <Text style={styles.progressText}>文件转码中，请稍后....</Text>
-          <TouchableHighlight style={styles.cancelBtn} onPress={() => onCancel()}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableHighlight>
-        </View>
-      );
-    }
-    return null;
-  };
-
-  return {
-    ProgressPopup,
-    setProgress,
-    openProgressPopup: () => toggleVisible(true),
-    closeProgressPopup: () => toggleVisible(false),
-  };
-}
+export default observer(ProgressPopup);
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
     top: 0,
     right: 0,
     bottom: 0,
@@ -63,16 +36,16 @@ const styles = StyleSheet.create({
   progressText: {
     marginVertical: 24,
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   cancelBtn: {
     paddingHorizontal: 24,
     paddingVertical: 16,
-    backgroundColor: 'yellow',
+    backgroundColor: "yellow",
     borderRadius: 9,
   },
   cancelText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });

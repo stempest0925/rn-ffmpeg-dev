@@ -5,7 +5,6 @@ import { StyleSheet, View, Text, TouchableHighlight, Alert, Platform } from "rea
 import RNFS from "react-native-fs";
 import DocumentPicker from "react-native-document-picker";
 import FFmepg from "../helpers/ffmpegCommand";
-import useProgressPopup from "./ProgressPopup";
 import fileSystem from "../helpers/fileSystem";
 import { FFmpegKit } from "ffmpeg-kit-react-native";
 
@@ -20,8 +19,6 @@ interface ControllerProps {
 }
 
 export default function Controller(props: ControllerProps): JSX.Element {
-  const { ProgressPopup, setProgress, openProgressPopup } = useProgressPopup({ onCancel: () => {} });
-
   const btns = [
     { title: "选择影片", onPress: () => pickVideo() },
     { title: "查看缓存", onPress: () => {} },
@@ -38,6 +35,7 @@ export default function Controller(props: ControllerProps): JSX.Element {
       copyTo: "cachesDirectory",
       type: DocumentPicker.types.video,
     });
+    console.log(pickValue);
 
     if (pickValue.fileCopyUri) {
       props.setVideoUri(pickValue.uri);

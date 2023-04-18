@@ -1,6 +1,6 @@
-import React from 'react';
-import Svg, {Circle, Path, Text} from 'react-native-svg';
-import Animated, {useSharedValue, useAnimatedProps, withTiming} from 'react-native-reanimated';
+import React from "react";
+import Svg, { Circle, Path, Text } from "react-native-svg";
+import Animated, { useSharedValue, useAnimatedProps, withTiming } from "react-native-reanimated";
 
 interface SvgProgressProps {
   size: number;
@@ -30,12 +30,19 @@ function useSvgProgress(props: SvgProgressProps) {
     const arcAxis = `A${originRadius} ${originRadius} 0 ${arcLarge} 1 ${arcX} ${arcY}`;
     const path = `${moveAxis} ${arcAxis}`;
 
-    return {d: path};
+    return { d: path };
   });
 
   const SvgProgressRender = () => (
     <Svg width={svgSize} height={svgSize}>
-      <Circle cx={circleAxis[0]} cy={circleAxis[1]} r={circleSize} fill="none" stroke="#ccc" strokeWidth={props.strokeWidth} />
+      <Circle
+        cx={circleAxis[0]}
+        cy={circleAxis[1]}
+        r={circleSize}
+        fill="none"
+        stroke="#ccc"
+        strokeWidth={props.strokeWidth}
+      />
       <AnimatedPath
         animatedProps={animatedPathProps}
         fill="none"
@@ -49,7 +56,7 @@ function useSvgProgress(props: SvgProgressProps) {
     </Svg>
   );
 
-  return {SvgProgressRender, toggleProgress};
+  return { SvgProgressRender, toggleProgress };
 }
 
 export default useSvgProgress;

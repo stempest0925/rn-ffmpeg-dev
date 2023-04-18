@@ -1,18 +1,18 @@
-import {Platform} from 'react-native';
-import RNFS from 'react-native-fs';
+import { Platform } from "react-native";
+import RNFS from "react-native-fs";
 
 class fileSystem {
-  static readonly ROOT_PREFIX = Platform.OS === 'android' ? 'file://' : '';
-  static readonly CACHE_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.CachesDirectoryPath + '/';
-  static readonly DOCUMENT_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.DocumentDirectoryPath + '/';
+  static readonly ROOT_PREFIX = Platform.OS === "android" ? "file://" : "";
+  static readonly CACHE_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.CachesDirectoryPath + "/";
+  static readonly DOCUMENT_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.DocumentDirectoryPath + "/";
 
   static exists(filepath: string): Promise<boolean> {
     return RNFS.exists(filepath);
   }
 
-  static mkdir(dir: string, rootDir: 'cache' | 'document'): Promise<boolean> {
+  static mkdir(dir: string, rootDir: "cache" | "document"): Promise<boolean> {
     return new Promise(async resolve => {
-      const _path = `${rootDir === 'document' ? fileSystem.DOCUMENT_ROOT_DIR : fileSystem.CACHE_ROOT_DIR}${dir}/`;
+      const _path = `${rootDir === "document" ? fileSystem.DOCUMENT_ROOT_DIR : fileSystem.CACHE_ROOT_DIR}${dir}/`;
       const _exists = await fileSystem.exists(_path);
       if (!_exists) {
         await RNFS.mkdir(_path);
@@ -29,10 +29,10 @@ class fileSystem {
    * @param destPath
    * @param mode
    */
-  static copy(filepath: string, destPath: string, mode: 'overwrite' | 'suffix' = 'overwrite'): Promise<boolean> {
+  static copy(filepath: string, destPath: string, mode: "overwrite" | "suffix" = "overwrite"): Promise<boolean> {
     return new Promise(async resolve => {
-      if (mode === 'overwrite') {
-        if (Platform.OS === 'android') {
+      if (mode === "overwrite") {
+        if (Platform.OS === "android") {
           await RNFS.copyFile(filepath, destPath);
           resolve(true);
         } else {

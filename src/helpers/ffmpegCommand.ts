@@ -1,6 +1,13 @@
-import {FFmpegKit, FFprobeKit} from 'ffmpeg-kit-react-native';
+import { FFmpegKit, FFprobeKit } from "ffmpeg-kit-react-native";
 
-const RESOLUTION_PRESET = {qHD: '640x360', qFHD: '960x540', HD: '1280x720', FHD: '1920x1080', QHD: '2560x1440', UHD: '3840x2160'};
+const RESOLUTION_PRESET = {
+  qHD: "640x360",
+  qFHD: "960x540",
+  HD: "1280x720",
+  FHD: "1920x1080",
+  QHD: "2560x1440",
+  UHD: "3840x2160",
+};
 
 export default class FFmepg {
   static transcoding(
@@ -8,7 +15,7 @@ export default class FFmepg {
     outFile: string,
     completeCallback: () => void,
     progressCallback?: (progress: number) => void,
-    command: FFmpegCommand = new FFmpegCommand(targetFile, outFile).add(`-s ${RESOLUTION_PRESET.HD}`).add('-r 30'),
+    command: FFmpegCommand = new FFmpegCommand(targetFile, outFile).add(`-s ${RESOLUTION_PRESET.HD}`).add("-r 30"),
   ) {
     try {
       const commandStr = command.getCommand();
@@ -24,7 +31,7 @@ export default class FFmepg {
         FFmpegKit.executeAsync(commandStr, completeCallback);
       }
     } catch (error) {
-      console.error('transcoding error', error instanceof Error ? error.message : error);
+      console.error("transcoding error", error instanceof Error ? error.message : error);
     }
   }
 
@@ -42,7 +49,7 @@ export class FFmpegCommand {
   constructor(targetFile: string, outFile: string) {
     this.targetFile = targetFile;
     this.outFile = outFile;
-    this.optionStr = '';
+    this.optionStr = "";
   }
 
   add(options: string | string[]): FFmpegCommand {
