@@ -18,70 +18,64 @@ interface ControllerProps {
   setThumbnailList: (list: string[]) => void;
 }
 
-export default function Controller(props: ControllerProps): JSX.Element {
+export default function Controller(): JSX.Element {
   const btns = [
     { title: "选择影片", onPress: () => pickVideo() },
     { title: "查看缓存", onPress: () => {} },
   ];
 
   const pickVideo = async () => {
-    // await requestPermission('android.permission.READ_EXTERNAL_STORAGE');
-    // fileSystem.clearCache('thumbnails').then(res => console.log('清理thumbnail: ', res));
-
-    await fileSystem.mkdir("videos", "cache");
+    await fileSystem.mkdir("videos/a11/222", "cache"); //这里要通过split分割，递归mkdir
     // await fileSystem.mkdir('thumbnails', 'cache');
 
-    const pickValue = await DocumentPicker.pickSingle({
-      copyTo: "cachesDirectory",
-      type: DocumentPicker.types.video,
-    });
-    console.log(pickValue);
+    // const pickValue = await DocumentPicker.pickSingle({
+    //   copyTo: "cachesDirectory",
+    //   type: DocumentPicker.types.video,
+    // });
+    // console.log(pickValue);
 
-    if (pickValue.fileCopyUri) {
-      props.setVideoUri(pickValue.uri);
-      // const outFilePath = getDir('cache') + '/videos/video_' + new Date().getTime() + '.mp4';
-      // videoTranscoding(pickValue.fileCopyUri, outFilePath);
-    } else {
-      Alert.alert("选择视频出错");
-    }
+    // if (pickValue.fileCopyUri) {
+    //   props.setVideoUri(pickValue.uri);
+    //   // const outFilePath = getDir('cache') + '/videos/video_' + new Date().getTime() + '.mp4';
+    //   // videoTranscoding(pickValue.fileCopyUri, outFilePath);
+    // } else {
+    //   Alert.alert("选择视频出错");
+    // }
   };
 
-  const videoTranscoding = async (targetFile: string, outFile: string) => {
-    openProgressPopup();
-    FFmepg.transcoding(
-      targetFile,
-      outFile,
-      () => {
-        setProgress(100);
-        props.setVideoUri(outFile);
-        getThumbnailList(outFile);
-      },
-      progress => {
-        setProgress(progress);
-      },
-    );
-  };
+  // const videoTranscoding = async (targetFile: string, outFile: string) => {
+  //   openProgressPopup();
+  //   FFmepg.transcoding(
+  //     targetFile,
+  //     outFile,
+  //     () => {
+  //       setProgress(100);
+  //       props.setVideoUri(outFile);
+  //       getThumbnailList(outFile);
+  //     },
+  //     progress => {
+  //       setProgress(progress);
+  //     },
+  //   );
+  // };
 
-  const getThumbnailList = (filePath: string) => {
-    const cacheDir = fileSystem.CACHE_ROOT_DIR + "thumbnails/";
-    const outImage = `${cacheDir}image_%02d.jpg`;
-    FFmpegKit.execute(`-i ${filePath} -r 2 ${outImage}`).then(async () => {
-      const readDir = await RNFS.readDir(cacheDir);
-      props.setThumbnailList(readDir.map(item => fileSystem.ROOT_PREFIX + item.path));
-    });
-  };
+  // const getThumbnailList = (filePath: string) => {
+  //   const cacheDir = fileSystem.CACHE_ROOT_DIR + "thumbnails/";
+  //   const outImage = `${cacheDir}image_%02d.jpg`;
+  //   FFmpegKit.execute(`-i ${filePath} -r 2 ${outImage}`).then(async () => {
+  //     const readDir = await RNFS.readDir(cacheDir);
+  //     props.setThumbnailList(readDir.map(item => fileSystem.ROOT_PREFIX + item.path));
+  //   });
+  // };
 
   return (
-    <>
-      <View style={styles.container}>
-        {btns.map(btn => (
-          <TouchableHighlight key={btn.title} onPress={btn.onPress} style={styles.btn}>
-            <Text style={styles.btnText}>{btn.title}</Text>
-          </TouchableHighlight>
-        ))}
-      </View>
-      <ProgressPopup />
-    </>
+    <View style={styles.container}>
+      {btns.map(btn => (
+        <TouchableHighlight key={btn.title} onPress={btn.onPress} style={styles.btn}>
+          <Text style={styles.btnText}>{btn.title}</Text>
+        </TouchableHighlight>
+      ))}
+    </View>
   );
 }
 

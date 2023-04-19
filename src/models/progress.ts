@@ -6,6 +6,6 @@ const Progress = types.model({
   num: types.number,
 });
 
-const ProgressStore = Progress.create({ visible: true, text: "文件转码中，请稍后....", num: 0 });
+const ProgressStore = Progress.create({ visible: false, text: "文件转码中，请稍后....", num: 0 });
 
 export default ProgressStore;

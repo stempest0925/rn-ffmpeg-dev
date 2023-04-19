@@ -6,20 +6,36 @@ class fileSystem {
   static readonly CACHE_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.CachesDirectoryPath + "/";
   static readonly DOCUMENT_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.DocumentDirectoryPath + "/";
 
-  static exists(filepath: string): Promise<boolean> {
-    return RNFS.exists(filepath);
+  /**
+   * 检查路径是否存在。
+   * @param path
+   */
+  static exists(path: string): Promise<boolean> {
+    return RNFS.exists(path);
   }
 
-  static mkdir(dir: string, rootDir: "cache" | "document"): Promise<boolean> {
+  /**
+   * 基于mkdir，循环创建层级文件夹。
+   * @param dir
+   * @param root
+   */
+  static mkdir(dir: string, root: "cache" | "document"): Promise<boolean> {
     return new Promise(async resolve => {
-      const _path = `${rootDir === "document" ? fileSystem.DOCUMENT_ROOT_DIR : fileSystem.CACHE_ROOT_DIR}${dir}/`;
-      const _exists = await fileSystem.exists(_path);
-      if (!_exists) {
-        await RNFS.mkdir(_path);
-        resolve(true);
-      } else {
-        resolve(true);
+      const dirs: string[] = dir.split("/").filter(item => item !== "");
+      if (dirs.length > 0) {
+        const rootDir = root === "document" ? fileSystem.DOCUMENT_ROOT_DIR : fileSystem.CACHE_ROOT_DIR;
+        for (let item = 1; item <= dirs.length; item++) {
+          const path = rootDir + dirs.slice(0, item).join("/") + "/";
+          const isExists = await fileSystem.exists(path);
+
+          if (!isExists) {
+            await RNFS.mkdir(path);
+          } else {
+            continue;
+          }
+        }
       }
+      resolve(true);
     });
   }
 
@@ -65,14 +81,14 @@ class fileSystem {
    * 目标不存在: true
    * 目标存在 & 删除成功: true
    * 目标存在 & 删除失败: false
-   * @param filepath
+   * @param path
    */
-  static delete(filepath: string): Promise<boolean> {
+  static delete(path: string): Promise<boolean> {
     return new Promise(async resolve => {
-      const _exists = await fileSystem.exists(filepath);
-      if (_exists) {
+      const isExists = await fileSystem.exists(path);
+      if (isExists) {
         try {
-          await RNFS.unlink(filepath);
+          await RNFS.unlink(path);
           resolve(true);
         } catch (error) {
           resolve(false);
@@ -83,12 +99,34 @@ class fileSystem {
     });
   }
 
+  /**
+   * 清除缓存。
+   * @param dir
+   */
   static clearCache(dir?: string): Promise<boolean> {
     return new Promise(async resolve => {
-      const _deleteStatus = await fileSystem.delete(dir ? fileSystem.CACHE_ROOT_DIR + dir : fileSystem.CACHE_ROOT_DIR);
+      const _deleteStatus = await fileSystem.delete(fileSystem.CACHE_ROOT_DIR + (dir ? dir : ""));
 
       resolve(_deleteStatus);
     });
+  }
+
+  /**
+   * 获取文件名称
+   * @param filepath
+   * @returns
+   */
+  static getFileName(filepath: string) {
+    try {
+      const index = filepath.lastIndexOf("/") + 1;
+      const file = filepath.substring(index, filepath.length);
+      const fileTuple = file.split(".");
+      if (fileTuple.length === 2 && fileTuple[0] !== "" && fileTuple[1]) {
+        return { name: fileTuple[0], ext: fileTuple[1] };
+      } else throw new Error("无效的文件路径");
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
 
