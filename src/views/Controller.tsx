@@ -1,63 +1,42 @@
 import React from "react";
 import { StyleSheet, View, Text, TouchableHighlight, Alert, Platform } from "react-native";
-// import {requestPermission} from '../helpers/permission';
-
-import RNFS from "react-native-fs";
 import DocumentPicker from "react-native-document-picker";
-import FFmepg from "../helpers/ffmpegCommand";
-import fileSystem from "../helpers/fileSystem";
 import { FFmpegKit } from "ffmpeg-kit-react-native";
 
-function getDir(defaultPath: "cache" | "document") {
-  const path = defaultPath === "document" ? RNFS.DocumentDirectoryPath : RNFS.CachesDirectoryPath;
-  return Platform.OS === "android" ? "file://" + path : path;
-}
+// import {requestPermission} from '../helpers/permission';
+import fileSystem from "../helpers/fileSystem";
+import FFmepg from "../helpers/ffmpeg";
+import ProgressStore from "../models/progress";
+import videoStore from "../models";
+import { observer } from "mobx-react-lite";
 
-interface ControllerProps {
-  setVideoUri: (uri: string) => void;
-  setThumbnailList: (list: string[]) => void;
-}
-
-export default function Controller(): JSX.Element {
+function Controller(): JSX.Element {
   const btns = [
-    { title: "选择影片", onPress: () => pickVideo() },
+    { title: "选择影片", onPress: () => importVideo() },
     { title: "查看缓存", onPress: () => {} },
   ];
 
-  const pickVideo = async () => {
-    await fileSystem.mkdir("videos/a11/222", "cache"); //这里要通过split分割，递归mkdir
-    // await fileSystem.mkdir('thumbnails', 'cache');
+  const importVideo = async () => {
+    // await fileSystem.mkdir("videos/a11/222", "cache");
 
-    // const pickValue = await DocumentPicker.pickSingle({
-    //   copyTo: "cachesDirectory",
-    //   type: DocumentPicker.types.video,
-    // });
-    // console.log(pickValue);
-
-    // if (pickValue.fileCopyUri) {
-    //   props.setVideoUri(pickValue.uri);
-    //   // const outFilePath = getDir('cache') + '/videos/video_' + new Date().getTime() + '.mp4';
-    //   // videoTranscoding(pickValue.fileCopyUri, outFilePath);
-    // } else {
-    //   Alert.alert("选择视频出错");
-    // }
+    // copyTo: "cachesDirectory",
+    const pickValue = await DocumentPicker.pickSingle({ type: DocumentPicker.types.video });
+    console.log(pickValue);
+    if (pickValue.name) {
+      videoStore.addAssets(pickValue.name);
+    }
+    // const outputFile = fileSystem.DOCUMENT_ROOT_DIR + "/videos/";
+    // FFmepg.transcoding(
+    //   pickValue.uri,
+    //   outputFile,
+    //   () => {},
+    //   progress => {
+    //     ProgressStore.setProgress(progress);
+    //   },
+    // );
   };
 
-  // const videoTranscoding = async (targetFile: string, outFile: string) => {
-  //   openProgressPopup();
-  //   FFmepg.transcoding(
-  //     targetFile,
-  //     outFile,
-  //     () => {
-  //       setProgress(100);
-  //       props.setVideoUri(outFile);
-  //       getThumbnailList(outFile);
-  //     },
-  //     progress => {
-  //       setProgress(progress);
-  //     },
-  //   );
-  // };
+  const confirmAssets = () => {};
 
   // const getThumbnailList = (filePath: string) => {
   //   const cacheDir = fileSystem.CACHE_ROOT_DIR + "thumbnails/";
@@ -78,6 +57,8 @@ export default function Controller(): JSX.Element {
     </View>
   );
 }
+
+export default observer(Controller);
 
 const styles = StyleSheet.create({
   container: {

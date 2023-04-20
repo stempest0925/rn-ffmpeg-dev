@@ -1,8 +1,11 @@
-import { types } from "mobx-state-tree";
+import { destroy, types, flow } from "mobx-state-tree";
 import uuid from "uuid";
+import md5 from "md5";
 
 import { Assets } from "./assets";
 import Cut from "./cut";
+
+import fileSystem from "../helpers/fileSystem";
 
 const Task = types.model({
   id: types.string,
@@ -15,12 +18,29 @@ const VideoStore = types
     assets: types.array(Assets),
   })
   .actions(self => ({
-    createTask: () => {
+    createTask() {
       self.tasks.push({ id: uuid.v1(), cutQueue: [] });
     },
-    deleteTask: (id: string) => {
+    removeTask(id: string) {
       const index = self.tasks.findIndex(item => item.id === id);
       self.tasks.splice(index, 1);
+    },
+    addAssets: flow(function* (name: string) {
+      const assetsId = md5(name);
+      const assetsIndex = self.assets.findIndex(item => item.id === assetsId);
+      if (assetsIndex === -1) {
+        yield fileSystem.mkdir("/videos/" + assetsId, "document");
+        const index = self.assets.push({
+          id: assetsId,
+          path: fileSystem.DOCUMENT_ROOT_DIR + "/videos/" + assetsId + "/" + name,
+        });
+        console.log("1", assetsId, fileSystem.DOCUMENT_ROOT_DIR + "videos/" + assetsId + "/" + name);
+      } else {
+        console.log("2");
+      }
+    }),
+    removeAssets(assets: typeof Assets) {
+      destroy(assets);
     },
   }));
 
