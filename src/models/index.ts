@@ -6,6 +6,7 @@ import { Assets } from "./assets";
 import Cut from "./cut";
 
 import fileSystem from "../helpers/fileSystem";
+import { autorun } from "mobx";
 
 const Task = types.model({
   id: types.string,
@@ -17,6 +18,12 @@ const VideoStore = types
     tasks: types.array(Task),
     assets: types.array(Assets),
   })
+  .views(self => ({
+    getAssets(uid: string, isName: boolean = false) {
+      uid = isName ? md5(uid) : uid;
+      return self.assets.find(item => item.id === uid);
+    },
+  }))
   .actions(self => ({
     createTask() {
       self.tasks.push({ id: uuid.v1(), cutQueue: [] });
@@ -29,14 +36,8 @@ const VideoStore = types
       const assetsId = md5(name);
       const assetsIndex = self.assets.findIndex(item => item.id === assetsId);
       if (assetsIndex === -1) {
-        yield fileSystem.mkdir("/videos/" + assetsId, "document");
-        const index = self.assets.push({
-          id: assetsId,
-          path: fileSystem.DOCUMENT_ROOT_DIR + "/videos/" + assetsId + "/" + name,
-        });
-        console.log("1", assetsId, fileSystem.DOCUMENT_ROOT_DIR + "videos/" + assetsId + "/" + name);
-      } else {
-        console.log("2");
+        yield fileSystem.mkdir(`/videos/${assetsId}`, "document");
+        self.assets.push({ id: assetsId, path: `${fileSystem.DOCUMENT_ROOT_DIR}/videos/${assetsId}/${name}` });
       }
     }),
     removeAssets(assets: typeof Assets) {

@@ -3,8 +3,8 @@ import RNFS from "react-native-fs";
 
 class fileSystem {
   static readonly ROOT_PREFIX = Platform.OS === "android" ? "file://" : "";
-  static readonly CACHE_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.CachesDirectoryPath + "/";
-  static readonly DOCUMENT_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.DocumentDirectoryPath + "/";
+  static readonly CACHE_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.CachesDirectoryPath;
+  static readonly DOCUMENT_ROOT_DIR = fileSystem.ROOT_PREFIX + RNFS.DocumentDirectoryPath;
 
   /**
    * 检查路径是否存在。
@@ -23,7 +23,7 @@ class fileSystem {
     return new Promise(async resolve => {
       const dirs: string[] = dir.split("/").filter(item => item !== "");
       if (dirs.length > 0) {
-        const rootDir = root === "document" ? fileSystem.DOCUMENT_ROOT_DIR : fileSystem.CACHE_ROOT_DIR;
+        const rootDir = (root === "document" ? fileSystem.DOCUMENT_ROOT_DIR : fileSystem.CACHE_ROOT_DIR) + "/";
         for (let item = 1; item <= dirs.length; item++) {
           const path = rootDir + dirs.slice(0, item).join("/") + "/";
           const isExists = await fileSystem.exists(path);

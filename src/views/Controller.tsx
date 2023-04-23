@@ -4,11 +4,11 @@ import DocumentPicker from "react-native-document-picker";
 import { FFmpegKit } from "ffmpeg-kit-react-native";
 
 // import {requestPermission} from '../helpers/permission';
-import fileSystem from "../helpers/fileSystem";
 import FFmepg from "../helpers/ffmpeg";
 import ProgressStore from "../models/progress";
 import videoStore from "../models";
 import { observer } from "mobx-react-lite";
+import fileSystem from "../helpers/fileSystem";
 
 function Controller(): JSX.Element {
   const btns = [
@@ -17,26 +17,32 @@ function Controller(): JSX.Element {
   ];
 
   const importVideo = async () => {
-    // await fileSystem.mkdir("videos/a11/222", "cache");
+    const pickVideo = await DocumentPicker.pickSingle({ type: DocumentPicker.types.video, copyTo: "cachesDirectory" });
+    if (pickVideo.name && pickVideo.fileCopyUri) {
+      await videoStore.addAssets(pickVideo.name);
+      const assets = videoStore.getAssets(pickVideo.name, true);
 
-    // copyTo: "cachesDirectory",
-    const pickValue = await DocumentPicker.pickSingle({ type: DocumentPicker.types.video });
-    console.log(pickValue);
-    if (pickValue.name) {
-      videoStore.addAssets(pickValue.name);
+      if (assets) {
+        const exists = await fileSystem.exists(assets.path);
+        if (!exists) {
+          ProgressStore.openProgress("文件转码中，请稍后....");
+          FFmepg.transcoding(
+            pickVideo.fileCopyUri,
+            assets.path,
+            () => {
+              console.log("完成");
+              // 不存在
+              ProgressStore.closeProgress();
+            },
+            progress => {
+              ProgressStore.setProgress(progress);
+            },
+          );
+        }
+        // 已存在
+      }
     }
-    // const outputFile = fileSystem.DOCUMENT_ROOT_DIR + "/videos/";
-    // FFmepg.transcoding(
-    //   pickValue.uri,
-    //   outputFile,
-    //   () => {},
-    //   progress => {
-    //     ProgressStore.setProgress(progress);
-    //   },
-    // );
   };
-
-  const confirmAssets = () => {};
 
   // const getThumbnailList = (filePath: string) => {
   //   const cacheDir = fileSystem.CACHE_ROOT_DIR + "thumbnails/";
